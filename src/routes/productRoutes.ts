@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-import { getAllProducts, createProduct, deleteOneProduct, updateOneProduct } from "../controllers/productController"
+import { getAllProducts, getOneProduct, createProduct, deleteOneProduct, updateOneProduct } from "../controllers/productController"
 
 import { userAuth } from "../middleware/jwt.middleware";
 
@@ -40,6 +40,38 @@ console.log("productRoutes called");
  *         description: Not authenticated
  */
 router.get("/", getAllProducts);
+
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     summary: Get a single product by id
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The product id
+ *     responses:
+ *       200:
+ *         description: The product details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 product:
+ *                   $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *       401:
+ *         description: Not authenticated
+ */
+router.get("/:id", getOneProduct);
 
 /**
  * @swagger

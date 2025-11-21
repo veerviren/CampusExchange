@@ -24,23 +24,23 @@ export class UserService {
             }
             const filter = { where: { email: email } }
             const user = await userMethods.findUniqueUser(filter)
-            
+
             if (!user) {
                 return res.status(404).json({ message: "User not found. Please check your email or sign up." })
             }
-            
+
             const matchPassword = await bcrypt.compare(pass, user.pass)
             if (!matchPassword) {
                 return res.status(401).json({ message: "Incorrect password" })
             }
-            
+
             // Check if user's email is verified - strictly enforce this
             if (!user.isVerified) {
                 // Generate new verification token if the current one has expired
                 if (!user.verificationToken || !user.verificationExpires || new Date(user.verificationExpires) < new Date()) {
                     const verificationToken = crypto.randomBytes(32).toString('hex');
                     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-                    
+
                     // Update user with new verification token
                     await userMethods.updateOneUser({
                         where: { id: user.id },
@@ -49,10 +49,10 @@ export class UserService {
                             verificationExpires
                         }
                     });
-                    
+
                     // Build verification URL with new token
                     const verificationUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/user/verify/${verificationToken}`;
-                    
+
                     // Send new verification email
                     const userForEmail: User = {
                         email: user.email,
@@ -64,25 +64,25 @@ export class UserService {
                         verificationExpires: user.verificationExpires ? new Date(user.verificationExpires) : undefined,
                         deletedAt: user.deletedAt ? new Date(user.deletedAt) : undefined
                     };
-                    
+
                     try {
                         await emailService.sendVerificationEmail(userForEmail, verificationUrl);
-                        return res.status(401).json({ 
+                        return res.status(401).json({
                             message: "Account not activated. A new verification email has been sent to your email address."
                         });
                     } catch (emailError) {
                         console.error("Failed to send verification email:", emailError);
-                        return res.status(401).json({ 
+                        return res.status(401).json({
                             message: "Account not activated. Please contact support to verify your email."
                         });
                     }
                 } else {
-                    return res.status(401).json({ 
+                    return res.status(401).json({
                         message: "Account not activated. Please check your email for the verification link or request a new one."
                     });
                 }
             }
-            
+
             const id = user.id
             const token = this.generateToken({ userId: id })
             return res.status(200).json({ user, token: token })
@@ -100,17 +100,17 @@ export class UserService {
             const existingUser = await userMethods.findUniqueUser({
                 where: { email: email }
             });
-            
+
             if (existingUser) {
                 return res.status(400).json({ message: "Email already in use. Please use a different email or sign in." });
             }
 
             const hashedPass = await bcrypt.hash(pass, 10)
-            
+
             // Generate verification token
             const verificationToken = crypto.randomBytes(32).toString('hex');
             const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-            
+
             // Create user object compatible with Prisma schema
             const userData = {
                 email: email,
@@ -121,16 +121,16 @@ export class UserService {
                 verificationToken: verificationToken,
                 verificationExpires: verificationExpires
             }
-            
+
             const payload = { data: userData }
             const newUser = await userMethods.createOneUser(payload)
-            
+
             // Generate JWT token
             const token = this.generateToken({ userId: newUser.id })
-            
+
             // Build verification URL
             const verificationUrl = `${process.env.BASE_URL || 'http://localhost:3001'}/user/verify/${verificationToken}`;
-            
+
             try {
                 // Create a user object compatible with the email service expectations
                 const userForEmail: User = {
@@ -142,11 +142,11 @@ export class UserService {
                     verificationToken: newUser.verificationToken || undefined,
                     verificationExpires: newUser.verificationExpires ? newUser.verificationExpires : undefined
                 };
-                
+
                 // Send verification email
                 await emailService.sendVerificationEmail(userForEmail, verificationUrl);
-                
-                return res.status(200).json({ 
+
+                return res.status(200).json({
                     message: "Registration started. Your account will be activated after you verify your email address.",
                     user: {
                         id: newUser.id,
@@ -160,7 +160,7 @@ export class UserService {
             } catch (emailError) {
                 console.error("Error sending verification email:", emailError);
                 // Continue with registration even if email fails, but make it clear verification is required
-                return res.status(201).json({ 
+                return res.status(201).json({
                     message: "Registration started, but we couldn't send a verification email. Please contact support to verify your account.",
                     user: {
                         id: newUser.id,
@@ -169,7 +169,7 @@ export class UserService {
                         isVerified: newUser.isVerified
                     },
                     token: token,
-                    verificationSent: false 
+                    verificationSent: false
                 });
             }
         }
@@ -233,11 +233,11 @@ export class UserService {
         try {
             const filter = { where: { id: id } };
             const user = await userMethods.findUniqueUser(filter);
-            
+
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            
+
             return res.status(200).json(user);
         }
         catch (err) {
@@ -279,7 +279,7 @@ export class UserService {
                 }
             });
 
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: "Email verified successfully. Your account is now activated and you can log in.",
                 user: {
                     id: updatedUser.id,
@@ -344,7 +344,7 @@ export class UserService {
             // Send verification email
             await emailService.sendVerificationEmail(userForEmail, verificationUrl);
 
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: "Verification email has been sent. Please check your inbox."
             });
         } catch (err) {

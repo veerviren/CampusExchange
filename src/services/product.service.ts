@@ -8,17 +8,31 @@ import { ProductMethods } from "../repositories/product.repository";
 
 const productMethods = new ProductMethods()
 
-export class ProductService{
+export class ProductService {
 
-    getAllProductService = async (userId: String, res: Response, status?: string, category?: string, isSold?: string) => {
+    getAllProductService = async (userId: String, res: Response, status?: string, category?: string, isSold?: string, isFeatured?: string) => {
         try {
-            console.log('getAllProductService params:', { userId, status, category, isSold });
-            const products = await productMethods.findAllProduct(userId, status, category, isSold);
+            console.log('getAllProductService params:', { userId, status, category, isSold, isFeatured });
+            const products = await productMethods.findAllProduct(userId, status, category, isSold, isFeatured);
             return res.status(200).json({ products })
         }
         catch (err) {
             console.log(err)
             return res.status(400).json({ message: "Some error occured" })
+        }
+    }
+
+    getOneProductService = async (productId: string, res: Response) => {
+        try {
+            const product = await productMethods.findOneProduct(productId);
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" });
+            }
+            return res.status(200).json({ product });
+        }
+        catch (err) {
+            console.log(err);
+            return res.status(400).json({ message: "Some error occured" });
         }
     }
 
@@ -56,5 +70,5 @@ export class ProductService{
             return res.status(400).json({ message: "Some error occured" })
         }
     }
-    
+
 }

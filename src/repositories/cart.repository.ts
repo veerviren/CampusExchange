@@ -19,15 +19,34 @@ export class CartRepository {
     }
 
     async getCart(userId: string) {
-        return prisma.cartItem.findMany({
+        const cartItems = await prisma.cartItem.findMany({
             where: { userId },
             include: { product: true },
         });
+
+        // Parse images string into array for each product
+        return cartItems.map(item => ({
+            ...item,
+            product: item.product ? {
+                ...item.product,
+                images: item.product.images
+                    ? item.product.images.split(',').map((img: string) => img.trim()).filter((img: string) => img)
+                    : []
+            } : null
+        }));
     }
 
     async removeFromCart(cartItemId: string, userId: string) {
         return prisma.cartItem.delete({
             where: { id: cartItemId, userId },
+        });
+    }
+
+    async updateCartQuantity(cartItemId: string, userId: string, quantity: number) {
+        return prisma.cartItem.update({
+            where: { id: cartItemId, userId },
+            data: { quantity },
+            include: { product: true },
         });
     }
 

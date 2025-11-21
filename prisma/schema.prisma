@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -26,6 +26,8 @@ model User {
   sellingProducts   Product[] @relation("SellerProducts")
   boughtProducts    Product[] @relation("BuyerProducts")
   cartItems         CartItem[]
+  favorites         Favorite[]
+  orders            Order[]
 }
 
 model Product {
@@ -37,10 +39,11 @@ model Product {
   name        String
   description String?
   price       Float
+  quantity    Int       @default(1)
   category    String?
   isSold      Boolean   @default(false)
   soldAt      DateTime?
-  images      String[]  // Array of image URLs
+  images      String?   // Comma separated image URLs
   sellerId    String    // ID of the user who is selling the product
   seller      User      @relation("SellerProducts", fields: [sellerId], references: [id])
   buyerId     String?   // ID of the user who bought the product (null if not sold)
@@ -49,8 +52,10 @@ model Product {
   specifications Json?  // Flexible field for technical specifications
   isFeatured  Boolean   @default(false)
   discount    Float?    // Discount percentage
-  tags        String[]  // Search tags
+  tags        String?   // Search tags
   cartItems         CartItem[]
+  favorites         Favorite[]
+  orderItems        OrderItem[]
 }
 
 model CartItem {
@@ -61,5 +66,48 @@ model CartItem {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  @@unique([userId, productId])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  total     Float
+  status    String      @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  // Shipping Details
+  fullName  String
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  phone     String
+
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float    // Price at time of purchase
+
+  order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
 }
