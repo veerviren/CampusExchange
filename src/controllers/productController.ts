@@ -9,10 +9,24 @@ import { Product } from './interfaces/product.interface'
 const productService = new ProductService()
 
 export const getAllProducts = async (req: Request, res: Response) => {
-    console.log("GET '/products'");
+    console.log("GET '/products' hello");
     const userId = (req as any).locals.userId;
-    console.log("userId is", userId);
-    const response = productService.getAllProductService(userId, res);
+    const { status, category, isSold, isFeatured } = req.query;
+    const response = await productService.getAllProductService(
+        userId,
+        res,
+        status as string | undefined,
+        category as string | undefined,
+        isSold as string | undefined,
+        isFeatured as string | undefined
+    );
+    return response;
+}
+
+export const getOneProduct = async (req: Request, res: Response) => {
+    console.log("GET '/products/:id'");
+    const { id } = req.params;
+    const response = await productService.getOneProductService(id, res);
     return response;
 }
 
@@ -23,17 +37,19 @@ export const createProduct = async (req: Request, res: Response) => {
         name,
         description,
         price,
+        quantity,
         category,
         images,
         isFeatured,
         discount,
         tags
     } = req.body;
-    
+
     const productDetails: Product = {
         name: name,
         description: description,
         price: price || 0, // Default price to 0 if not provided
+        quantity: quantity || 1,
         sellerId: sellerId,
         category: category,
         images: images,
@@ -41,7 +57,7 @@ export const createProduct = async (req: Request, res: Response) => {
         discount: discount,
         tags: tags
     };
-    
+
     const response = productService.createProductService(productDetails, res);
     return response;
 }

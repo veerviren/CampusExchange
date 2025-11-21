@@ -5,6 +5,9 @@ const userRoutes = require("./routes/userRoutes")
 const productRoutes = require("./routes/productRoutes")
 import dotenv from "dotenv";
 import { setupSwagger } from './swagger';
+const cartRoutes = require("./routes/cartRoutes");
+const favoriteRoutes = require("./routes/favoriteRoutes");
+import orderRoutes from './routes/orderRoutes'
 
 dotenv.config();
 
@@ -18,8 +21,11 @@ setupSwagger(app);
 
 app.use("/user", userRoutes);
 app.use('/products', productRoutes);
+app.use('/cart', cartRoutes);
+app.use('/favorites', favoriteRoutes); // Changed to use imported favoriteRoutes
+app.use('/orders', orderRoutes); // Registered order routes
 
-const port = process.env.PORT || 3001; // Using process.env.PORT if available, otherwise default to 3001
+const port = process.env.PORT || 8080; // Using process.env.PORT if available, otherwise default to 8080 for Cloud Run
 const server = app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
